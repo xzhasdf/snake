@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Document</title>
+		<style>
+			#wrap {
+				width: 600px;
+				height: 600px;
+				background: black;
+				margin: 20px auto;
+				/*border-right: 1px solid grey;
+				border-bottom: 1px solid grey;*/
+			}
+			.endDiv {
+				width: 100%;
+				height: 100%;
+				text-align: center;
+				line-height: 600px;
+				font-size: 4rem;
+				color: white;
+			}
+			.hang {
+				width: 100%;
+				height: 20px;
+			}
+			
+			.box {
+				width: 20px;
+				height: 20px;
+				/*border-left: 1px solid grey;
+				border-top: 1px solid grey;
+				box-sizing: border-box;*/
+				display: inline-block;
+			}
+			.btns {
+				display: flex;
+				justify-content: center;
+			}
+			
+			button {
+				height: 30px;
+				margin: 0 5px;
+				padding: 5px 15px;
+				background: black;
+				color: white;
+				border-radius: 5px;
+				line-height: 18px;
+				box-shadow: 1px 1px 1px black;
+				outline: none;
+				-webkit-user-select: none;
+			}
+			button:active {
+				box-shadow: 1px 1px 1px black inset;
+			}
+			.btns p {
+				margin: 0;
+				padding: 0 10px;
+				line-height: 30px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="btns">
+			<button id="btn1">游戏开始</button>
+			<button id="btn2">重置</button>
+			<p>得分: <span>0</span>分</p>
+		</div>
+		<div id="wrap"></div>
+		<p style="text-align: center;">点击游戏开始按钮后,按任意方向键开始</p>
+		<script>
+			var wrap = document.getElementById("wrap");
+			var btn1 = document.getElementById('btn1');
+			var btn2 = document.getElementById('btn2');
+			var p = document.querySelector('.btns p span');
+			var hangNum = 30; //行数
+			var lieNum = 30; //列数
+			var arrHang = []; //行数组,一维数组,暂存
+			var arr = []; //页面盒子二维数组,用于确定蛇的位置
+			var foodArr = []; //食物
+			var timer_left; //左定时器
+			var timer_up; //上定时器
+			var timer_right; //右定时器
+			var timer_down; //下定时器
+			var s_long = 3; //蛇身长度
+			var a = randomNum(9,19); //初始行
+			var b = randomNum(9,19); //初始列
+			var s = []; //蛇的数组
+			
+			//盒子创建
+			function creatSnake() {
+				for(var i = 0; i < hangNum; i++) {
+					//创建行
+					var hang = document.createElement("div");
+					hang.className = "hang";
+					wrap.appendChild(hang);
+					for(var j = 0; j < lieNum; j++) {
+						//创建列
+						var lie = document.createElement("div");
+						lie.className = "box";
+						hang.appendChild(lie);
+						arrHang.push(lie); //将列插入行数组
+					}
+					arr.push(arrHang); //将行数组插入盒子二维组
+					arrHang = []; //清空行数组,以便重新获取
+				}
+				return arr;
+			}
+			creatSnake();
+			var row = document.getElementsByClassName('hang');
+
+			//随机数函数
+			function randomNum(x, y) {
+				return Math.floor(Math.random() * (y - x + 1) + x);
+			}	
+
+			var play = 1; //游戏开始开关
+			var direction; //蛇移动状态
+			//键盘事件
+			function game() {
+				document.onkeydown = function() {
+					var e = event || window.event;
+					if(play == 1) {
+						switch(e.keyCode) {
+							case 37: //左
+								if(direction == 'right') {return;}
+								clearTimer();
+								direction = 'left'; //记录移动状态
+								timer_left = setInterval(function() {
+									b--;
+									end(); //调用结束函数
+									s.push(arr[a][b]);
+									if(s.length > s_long) {
+										s[0].style.background = 'black';
+										s.shift();
+									}
+									for(var i = 0; i < s.length; i++) {
+										s[i].style.background = 'yellow';
+									}
+									food(s);
+									endSnake(s);
+									p.innerText = s_long - 3;
+								}, 150);
+								break;
+							case 38: //上
+								if(direction == 'down') {return;}
+								clearTimer();
+								direction = 'up'; //记录移动状态
+								timer_up = setInterval(function() {
+									a--;
+									end(); //调用结束函数
+									s.push(arr[a][b]);
+									if(s.length > s_long) {
+										s[0].style.background = 'black';
+										s.shift();
+									}
+									for(var i = 0; i < s.length; i++) {
+										s[i].style.background = 'yellow';
+									}
+									food(s);
+									endSnake(s);
+									p.innerText = s_long - 3;
+								}, 150);
+								break;
+							case 39: //右
+								if(direction == 'left') {return;}
+								clearTimer();
+								direction = 'right'; //记录移动状态
+								timer_right = setInterval(function() {
+									b++;
+									end(); //调用结束函数
+									s.push(arr[a][b]);
+									if(s.length > s_long) {
+										s[0].style.background = 'black';
+										s.shift();
+									}
+									for(var i = 0; i < s.length; i++) {
+										s[i].style.background = 'yellow';
+									}
+									food(s);
+									endSnake(s);
+									p.innerText = s_long - 3;
+								}, 150);
+								break;
+							case 40: //下
+								if(direction == 'up') {return;}
+								clearTimer();
+								direction = 'down'; //记录移动状态
+								timer_down = setInterval(function() {
+									a++;
+									end(); //调用结束函数
+									s.push(arr[a][b]);
+									if(s.length > s_long) {
+										s[0].style.background = 'black';
+										s.shift();
+									}
+									for(var i = 0; i < s.length; i++) {
+										s[i].style.background = 'yellow';
+									}
+									food(s);
+									endSnake(s);
+									p.innerText = s_long - 3;
+								}, 150);
+								break;
+						}
+					}
+					
+				}
+			}
+			
+			
+			//蛇头与蛇身相撞
+			function endSnake(j) {
+				for(var i = 0; i < j.length; i++) {
+					if(j[0] == j[i+1]) {
+						creatEndDiv();
+					}
+				}
+			}
+			
+			var flag = 1; //食物生成开关
+			var x,y; //食物行列
+			//随机生成食物
+			function food(k) {
+				k[k.length-1].style.background = 'skyblue';
+				if(flag == 1) {
+					var bol = 1;
+					while(bol) {
+						x = randomNum(0, hangNum); //食物行
+						y = randomNum(0, lieNum); //食物列
+						for(var i = 0; i < k.length; i++) {
+							if(arr[x][y] == k[i]) {
+								break;
+							}
+						}
+						if(i == k.length) {
+							bol = 0;
+						}
+						arr[x][y].style.background = 'hotpink';
+					}
+					flag = 0;
+				} else {
+					if(k[k.length-1] ==  arr[x][y]) {
+						s_long++;
+						flag = 1;
+					}
+				}
+			}
+			
+			//结束函数
+			function end() {
+				if(a >= hangNum || a < 0 || b >= lieNum || b < 0) {
+					clearTimer(); //清除所有定时器
+					play = 0; //关闭游戏开关
+					creatEndDiv();
+				}
+			}
+			
+			//结束页面
+			function creatEndDiv() {
+				wrap.innerHTML = '';
+				var endDiv = document.createElement('div');
+				wrap.appendChild(endDiv);
+				endDiv.className = 'endDiv';
+				endDiv.innerText = '游戏结束';
+			}
+			
+			//清除所有定时器
+			function clearTimer() {
+				clearInterval(timer_right);
+				clearInterval(timer_down);
+				clearInterval(timer_left);
+				clearInterval(timer_up);
+			}
+			
+			//开始按钮
+			btn1.onclick = function() {
+				if(play == 1) {
+					game(); //调用游戏函数
+				}
+			}
+			
+			//重置按钮
+			btn2.onclick = function() {
+				play = 1; //重置游戏状态
+				history.go(0);
+				wrap.innerHTML = '';
+				p.innerText = 0;
+			}
+		</script>
+	</body>
+</html>
